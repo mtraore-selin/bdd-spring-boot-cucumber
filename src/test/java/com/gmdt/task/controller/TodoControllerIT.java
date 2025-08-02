@@ -31,15 +31,12 @@ public class TodoControllerIT extends AbstractPostgresContainerTest {
 
     @Test
     void shouldCreateTodo() {
-        // Arrange
         Todo newTodo = new Todo();
         newTodo.setTitle("Integration Test");
         newTodo.setCompleted(false);
 
-        // Act
         ResponseEntity<Todo> response = restTemplate.postForEntity("/api/v1/todos", newTodo, Todo.class);
 
-        // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getId()).isNotNull();
@@ -48,13 +45,11 @@ public class TodoControllerIT extends AbstractPostgresContainerTest {
 
     @Test
     void shouldReturnAllTodos() {
-        // Arrange
         Todo todo1 = Todo.builder().title("Integration Test 1").description("Integration Test 1").build();
         Todo todo2 = Todo.builder().title("Integration Test 2").description("Integration Test 2").build();
         todoRepository.save(todo1);
         todoRepository.save(todo2);
 
-        // Act
         ResponseEntity<List<Todo>> response = restTemplate.exchange(
                 "/api/v1/todos",
                 HttpMethod.GET,
@@ -62,21 +57,17 @@ public class TodoControllerIT extends AbstractPostgresContainerTest {
                 new ParameterizedTypeReference<>() {}
         );
 
-        // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).hasSize(2);
     }
 
     @Test
     void shouldReturnTodoById() {
-        // Arrange
         Todo todo = Todo.builder().title("Task by ID Title").description("Task by ID Description").build();
         Todo saved = todoRepository.save(todo);
 
-        // Act
         ResponseEntity<Todo> response = restTemplate.getForEntity("/api/v1/todos/" + saved.getId(), Todo.class);
 
-        // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getTitle()).isEqualTo("Task by ID Title");
@@ -84,17 +75,44 @@ public class TodoControllerIT extends AbstractPostgresContainerTest {
 
     @Test
     void shouldDeleteTodo() {
-        // Arrange
         Todo todo = Todo.builder().title("Task by ID Title").description("Task by ID Description").build();
         Todo saved = todoRepository.save(todo);
 
-        // Act
         restTemplate.delete("/api/v1/todos/" + saved.getId());
 
-        // Assert
         boolean exists = todoRepository.findById(saved.getId()).isPresent();
         assertThat(exists).isFalse();
     }
 
+    @Test
+    void shouldUpdateTodo() {
+        Todo todo = Todo.builder()
+                .title("Old Title")
+                .description("Old Description")
+                .completed(false)
+                .build();
+        Todo saved = todoRepository.save(todo);
 
+        Todo updatedTodo = new Todo();
+        updatedTodo.setId(saved.getId());
+        updatedTodo.setTitle("Updated Title");
+        updatedTodo.setDescription("Updated Description");
+        updatedTodo.setCompleted(true);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Todo> request = new HttpEntity<>(updatedTodo, headers);
+
+        restTemplate.exchange(
+                "/api/v1/todos/" + saved.getId(),
+                HttpMethod.PUT,
+                request,
+                Void.class
+        );
+
+        Todo found = todoRepository.findById(saved.getId()).orElseThrow();
+        assertThat(found.getTitle()).isEqualTo("Updated Title");
+        assertThat(found.getDescription()).isEqualTo("Updated Description");
+        assertThat(found.getCompleted()).isTrue();
+    }
 }

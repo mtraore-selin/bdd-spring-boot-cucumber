@@ -109,4 +109,21 @@ public class TodoSteps extends AbstractPostgresContainerTest {
         boolean exists = todoRepository.findById(savedTodoId).isPresent();
         assertFalse(exists);
     }
+
+    @When("I update the todo with title {string} and completed {string}")
+    public void iUpdateTheTodo(String newTitle, String completed) {
+        todo.setTitle(newTitle);
+        todo.setCompleted(Boolean.parseBoolean(completed));
+        restTemplate.put("/api/v1/todos/" + savedTodoId, todo);
+        response = restTemplate.getForEntity("/api/v1/todos/" + savedTodoId, Todo.class);
+    }
+
+    @Then("the response should contain the todo with title {string} and completed {string}")
+    public void theResponseShouldContainUpdatedTodo(String expectedTitle, String expectedCompleted) {
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(expectedTitle, response.getBody().getTitle());
+        assertEquals(Boolean.parseBoolean(expectedCompleted), response.getBody().getCompleted());
+    }
+
 }

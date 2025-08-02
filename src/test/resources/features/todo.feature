@@ -25,3 +25,8 @@ Feature: Todo Management
     Given I have a saved todo with title "Wash car" and completed "false"
     When I delete the todo
     Then the todo should be removed from the system
+
+  Scenario: Update a todo
+    Given I have a saved todo with title "Clean desk" and completed "false"
+    When I update the todo with title "Clean desk and room" and completed "true"
+    Then the response should contain the todo with title "Clean desk and room" and completed "true"
